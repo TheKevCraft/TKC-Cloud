@@ -1,0 +1,47 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio temporary files
+*.vs/
+.vscode/
+
+# Rider
+.idea/
+
+# Resharper
+*.ReSharper*
+_ReSharper*/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Logs
+*.log
+*.vspscc
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node (if using any frontend tooling)
+node_modules/
+
+# Others
+/Storage/
+#TKC_Cloud.Tests/
+*.cache
+*.db
+*.db-shm
+*.db-wal
+*.bak
+
+
