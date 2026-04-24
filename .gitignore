@@ -3,6 +3,13 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+#Costum
+*/Storage/
+TKC_Cloud/Migrations/
+*.db
+*.db-shm
+*.db-wal
+
 # dotenv files
 .env
 
