@@ -1,0 +1,19 @@
+﻿@page "/"
+@inject NavigationManager Nav
+
+<PageTitle>TKC Cloud</PageTitle>
+
+<MudContainer Class="mt-10">
+
+    <MudText Typo="Typo.h4">TKC Cloud</MudText>
+
+    <MudProgressCircular Indeterminate=true Class="mt-4" />
+
+</MudContainer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.NavigateTo("/files");
+    }
+}

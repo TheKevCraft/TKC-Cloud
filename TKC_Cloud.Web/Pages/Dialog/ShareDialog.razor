@@ -1,0 +1,142 @@
+@inject HttpClient Http
+
+<MudDialog>
+    <DialogContent>
+
+        <!-- Mode -->
+        <MudSelect T="ShareMode" Label="Share Mode" @bind-Value="_model.Mode">
+            <MudSelectItem Value="ShareMode.Public">Öffentlich</MudSelectItem>
+            <MudSelectItem Value="ShareMode.UsersOnly">Nur Nutzer</MudSelectItem>
+        </MudSelect>
+
+        <!-- Allow Download -->
+        <MudSwitch T="bool" @bind-Checked="_model.AllowDownload" Color="Color.Primary">
+            Download erlauben
+        </MudSwitch>
+
+        <MudDivider Class="my-4" />
+
+        <!-- Password -->
+        <MudTextField T="string"
+                      Label="Passwort"
+                      InputType="InputType.Password"
+                      @bind-Value="_model.Password" />
+
+        <!-- Expire -->
+        <MudDatePicker Label="Ablaufdatum"
+                       @bind-Date="_model.ExpireAt" />
+
+        <MudDivider Class="my-4" />
+
+        <!-- Limits -->
+        <MudNumericField T="int?" Label="Max Views"
+                         @bind-Value="_model.MaxViews" />
+
+        <MudNumericField T="int?" Label="Max Downloads"
+                         @bind-Value="_model.MaxDownloads" />
+
+        <MudDivider Class="my-4" />
+
+        <!-- Users only -->
+        @if (_model.Mode == ShareMode.UsersOnly)
+        {
+            <MudText Typo="Typo.subtitle2">Erlaubte Nutzer</MudText>
+
+            <MudAutocomplete T="UserDto"
+                             Label="User hinzufügen"
+                             SearchFunc="SearchUsers"
+                             ToStringFunc="u => u.Username ?? string.Empty"
+                             ValueChanged="AddUser" 
+                             Clearable=true
+                             CoerceText=true />
+
+            <MudChipSet T="UserDto">
+                @foreach (var user in _model.Users)
+                {
+                    <MudChip T="UserDto" OnClose="() => RemoveUser(user)">
+                        @user?.Username?
+                    </MudChip>
+                }
+            </MudChipSet>
+        }
+
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Abbrechen</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save">Speichern</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid FileId { get; set; }
+
+    private ShareEditModel _model = new();
+
+    protected override void OnParametersSet()
+    {
+        _model.FileId = FileId;
+    }
+
+    private async Task Save()
+    {
+        // API Call
+        await  Http.PostAsJsonAsync("api/share", _model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task<IEnumerable<UserDto>> SearchUsers(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Enumerable.Empty<UserDto>();
+
+        return await Http.GetFromJsonAsync<List<UserDto>>($"api/users/search?q={value}", token) ?? new List<UserDto>();
+    }
+
+    private void AddUser(UserDto user)
+    {
+        if (_model.Users.Any(u => u.Id == user.Id))
+            return;
+
+        _model.Users.Add(user);
+    }
+
+    private void RemoveUser(UserDto user)
+    {
+        _model.Users.Remove(user);
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close();
+    }
+
+
+    // Models
+    public class ShareEditModel
+    {
+        public Guid FileId { get; set; }
+
+        public ShareMode Mode { get; set; } = ShareMode.Public;
+
+        public bool AllowDownload { get; set; } = true;
+
+        public string? Password { get; set; }
+
+        public DateTime? ExpireAt { get; set; }
+
+        public int? MaxViews { get; set; }
+        public int? MaxDownloads { get; set; }
+
+        public List<UserDto> Users { get; set; } = new();
+    }
+
+    public class UserDto
+    {
+        public Guid Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+    }
+}

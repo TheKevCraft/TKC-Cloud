@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "compounds": [
+        {
+            "name": "TKC Full Stack",
+            "configurations": [
+                "WebUI",
+                "CloudAPI",
+                "ServerManager"
+            ]
+        }
+    ],
+    "configurations": [
+        {
+            "name": "WebUI",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/TKC_Cloud.Web/TKC_Cloud.Web.csproj",
+        },
+        {
+            "name": "CloudAPI",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/TKC_Cloud/TKC-Cloud.csproj",
+        },
+        {
+            "name": "ServerManager",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/TKC_ServerManager/TKC_ServerManager.csproj",
+        }
+    ]
+}

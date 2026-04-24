@@ -1,0 +1,6 @@
+@TKC_ServerManager_HostAddress = http://localhost:5029
+
+GET {{TKC_ServerManager_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

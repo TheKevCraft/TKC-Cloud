@@ -1,0 +1,227 @@
+@page "/files"
+@attribute [Authorize]
+
+@inject IHttpClientFactory ClientFactory
+@inject IJSRuntime js
+@inject IDialogService DialogService
+
+<MudContainer>
+
+    <!-- Drag & Drop Zone for Unload (secondar) -->
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                   FilesChanged="UploadFiles"
+                   DragAndDrop=true
+                   AppendMultipleFiles=true
+                   Hidden=false />
+
+
+    <!-- Main Table (Files & Folders) -->
+    <MudTable ServerData="ServerReload" @ref="table" Dense=true Hover=true>
+
+        <ToolBarContent>
+            <MudBreadcrumbs Items="path" MaxItems="5" />
+
+            <MudSpacer />
+
+            <MudTextField T="string"
+                  Placeholder="Search..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true"
+                  ValueChanged="OnSearch" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortLabel="name" T="FileEntry">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="size" T="FileEntry">Size</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="created" T="FileEntry">Created At</MudTableSortLabel></MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.OriginalFileName</MudTd>
+            <MudTd DataLabel="Size">@FormatSize(context.Size)</MudTd>
+            <MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString()</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Color="Color.Primary"
+                               OnClick="() => View(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Primary"
+                               OnClick="() => Edit(context.Id)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Share"
+                               Color="Color.Primary" 
+                               OnClick="() => Share(context.Id)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Download"
+                               Color="Color.Primary"
+                               OnClick="() => Download(context.Id)"/>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               OnClick="() => Delete(context.Id)"/>
+            </MudTd>
+        </RowTemplate>
+
+        <NoRecordsContent>
+            <MudText>No matching records found</MudText>
+        </NoRecordsContent>
+
+        <LoadingContent>
+            <MudText>Loading...</MudText>
+        </LoadingContent>
+
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+
+    </MudTable>
+
+</MudContainer>
+
+@code{
+    private HttpClient? api;
+    private List<BreadcrumbItem> path = new()
+    {
+        new BreadcrumbItem("Home", href: "/files")
+    };
+
+    private MudTable<FileEntry>? table;
+    private string searchString = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            api = ClientFactory.CreateClient("API");
+            if (table is not null)
+                await table.ReloadServerData();
+        }
+    }
+
+    // Reload Table with Server-Data
+    private async Task<TableData<FileEntry>> ServerReload(TableState state, CancellationToken token)
+    {
+        var data = await api!.GetFromJsonAsync<List<FileEntry>>("api/files", token) ?? new List<FileEntry>();
+
+        if (!string.IsNullOrWhiteSpace(searchString))
+        {
+            data = data
+                .Where(f => f.OriginalFileName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        data = state.SortLabel switch
+        {
+            "name" => data.OrderByDirection(state.SortDirection, f => f.OriginalFileName).ToList(),
+            "size" => data.OrderByDirection(state.SortDirection, f => f.Size).ToList(),
+            "created" => data.OrderByDirection(state.SortDirection, f => f.CreatedAt).ToList(),
+            _ => data
+        };
+
+        var paged = data
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToList();
+
+        return new TableData<FileEntry>
+        {
+            TotalItems = data.Count,
+            Items = paged
+        };
+    } 
+
+    // Search
+    private async Task OnSearch(string text){
+        searchString = text;
+        if (table is not null)
+            await table.ReloadServerData();
+    }
+
+    // Drag & Drop
+    private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        if (api is null) return;
+
+        foreach (var file in files)
+        {
+            using var content = new MultipartFormDataContent();
+
+            var fileContent = new StreamContent(file.OpenReadStream(long.MaxValue));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            content.Add(fileContent, "file", file.Name);
+
+            var response = await api.PostAsync("api/files/upload", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Upload failed: {file.Name}");
+            }
+        }
+    }
+
+    // Buttons
+    private async Task View(FileEntry file) 
+    {
+        var parameters = new DialogParameters
+        {
+            ["File"] = file
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = false
+        };
+
+        await DialogService.ShowAsync<FilePreviewDialog>("Preview", parameters, options);
+    }
+    private async Task Edit(Guid id) {}
+    private async Task Share(Guid id)
+    {
+        var parameters = new DialogParameters
+        {
+            ["FileId"] = id
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = false
+        };
+
+        await DialogService.ShowAsync<ShareDialog>("Share", parameters, options);
+    }
+    private async Task Download(Guid id)
+    {
+        if (api is null) return;
+
+        var token = await js.InvokeAsync<string>("sessionStorage.getItem", "accessToken");
+
+        await js.InvokeVoidAsync("downloadFileFromApi", $"{api.BaseAddress}api/files/{id}", token);
+    }
+    private async Task Delete(Guid id)
+    {
+        if (api is null) return;
+
+        var response = await api.DeleteAsync($"api/files/file/{id}");
+        if (response.IsSuccessStatusCode && table is not null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    // Helpers
+    private string FormatSize(long bytes){
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

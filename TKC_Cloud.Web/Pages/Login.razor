@@ -1,0 +1,73 @@
+@page "/login"
+@using System.Net.Http.Json
+@using TKC_Cloud.Web.Services
+
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudPaper Class="pa-6 mx-auto mt-10" Style="max-width:400px">
+
+    <MudText Typo="Typo.h5">Login</MudText>
+
+    <MudTextField @bind-Value="email"
+                  Label="Email"
+                  InputType="InputType.Email"
+                  Required=true />
+
+    <MudTextField @bind-Value="password"
+                  Label="Password"
+                  InputType="InputType.Password"
+                  Required=true />
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               OnClick="OnLogin"
+               Class="mt-4">
+        Login
+    </MudButton>
+
+    <MudText Color="Color.Error">@error</MudText>
+
+</MudPaper>
+
+@code {
+
+    private string email = "";
+    private string password = "";
+    private string error = "";
+
+    private async Task OnLogin()
+    {
+        var client = ClientFactory.CreateClient("API");
+
+        var response = await client.PostAsJsonAsync("api/auth/login", new 
+        {
+            email,
+            password
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            error = "Login failed";
+            return;
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+        await JS.InvokeVoidAsync("sessionStorage.setItem", "accessToken", result!.AccessToken);
+        await JS.InvokeVoidAsync("localStorage.setItem", "refreshToken", result!.RefreshToken);
+
+        var authProvider = (AuthProvider)AuthStateProvider;
+        authProvider.NotifyLogin();
+
+        Nav.NavigateTo("/files", true);
+    }
+
+    private class LoginResponse
+    {
+        public string AccessToken { get; set; } = "";
+        public string RefreshToken { get; set; } = "";
+    }
+}
