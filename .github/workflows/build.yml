@@ -23,7 +23,7 @@ jobs:
       run: dotnet publish TKC_Cloud/TKC-Cloud.csproj -c Release -o out/cloud
 
     - name: Build Docker Image
-      run: docker build -t TheKevCraft/tkc-cloud ./TKC-Cloud
+      run: docker build -t TheKevCraft/tkc-cloud ./TKC_Cloud
       
     - name: Push Image
       run: |
