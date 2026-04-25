@@ -1,4 +1,11 @@
-FROM mcr.microsoft.com/dotnet/apsnet:10.0
+# Build Stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish TKC_Cloud/TKC-Cloud.csproj -c Release -o /app/publish
+
+# Runtime Stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY bin/Release/net10.0/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT [ "dotnet", "TKC-Cloud.dll" ]

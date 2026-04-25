@@ -10,22 +10,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
     
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
-        
-    - name: Publish Cloud API
-      run: dotnet publish TKC-Cloud -c Realease -o out/cloud
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      run: docker login -u ${{ secrets.USER }} -p ${{ secrets.PASS }}
 
     - name: Build Docker Image
       run: docker build -t TheKevCraft/tkc-cloud ./TKC-Cloud
       
     - name: Push Image
-      run: |
-        docker login -u ${{ secrets.USER }} -p ${{ secrets.PASS }}
-        docker push TheKevCraft/tkc-cloud
+      run: docker push TheKevCraft/tkc-cloud
