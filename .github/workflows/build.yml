@@ -20,7 +20,7 @@ jobs:
         dotnet-version: 10.0.x
         
     - name: Publish Cloud API
-      run: dotnet publish TKC-Cloud -c Realease -o out/cloud
+      run: dotnet publish TKC_Cloud/TKC-Cloud.csproj -c Release -o out/cloud
 
     - name: Build Docker Image
       run: docker build -t TheKevCraft/tkc-cloud ./TKC-Cloud
