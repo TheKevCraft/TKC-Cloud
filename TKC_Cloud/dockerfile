@@ -1,0 +1,4 @@
+FROM mcr.microsoft.com/dotnet/apsnet:10.0
+WORKDIR /app
+COPY bin/Release/net10.0/publish .
+ENTRYPOINT [ "dotnet", "TKC-Cloud.dll" ]
