@@ -13,9 +13,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-        
-    - name: Publish Cloud API
-      run: dotnet publish TKC-Cloud -c Realease -o out/cloud
+
+    - name: Login to Docker Hub
+      run: docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
 
     - name: Build Docker Image
       run: docker build -t TheKevCraft/tkc-cloud ./TKC_Cloud
