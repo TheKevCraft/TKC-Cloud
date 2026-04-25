@@ -18,7 +18,7 @@ jobs:
       run: docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
 
     - name: Build Docker Image
-      run: docker build -t TheKevCraft/tkc-cloud ./TKC_Cloud
+      run: docker build -t thekevcraft/tkc-cloud ./TKC_Cloud
       
     - name: Push Image
-      run: docker push TheKevCraft/tkc-cloud
+      run: docker push thekevcraft/tkc-cloud
