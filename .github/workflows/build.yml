@@ -1,0 +1,31 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Build & Push
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+        
+    - name: Publish Cloud API
+      run: dotnet publish TKC-Cloud -c Realease -o out/cloud
+
+    - name: Build Docker Image
+      run: docker build -t TheKevCraft/tkc-cloud ./TKC-Cloud
+      
+    - name: Push Image
+      run: |
+        docker login -u ${{ secrets.USER }} -p ${{ secrets.PASS }}
+        docker push TheKevCraft/tkc-cloud
