@@ -1,4 +1,6 @@
-namespace TKC_Cloud.Models;
+using TKC_Shared.Enum.Share;
+
+namespace TKC_Shared.Models.Share;
 
 public class Share
 {

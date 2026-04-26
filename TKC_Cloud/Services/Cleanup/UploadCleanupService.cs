@@ -3,13 +3,7 @@ using Microsoft.Extensions.Options;
 using TKC_Cloud.Data;
 using TKC_Cloud.Services.Storage;
 
-namespace TKC_Cloud.Services;
-
-public class UploadCleanupSettings
-{
-    public int IntervalMinutes { get; set; } = 10;
-    public int ExpirationHours { get; set; } = 6;
-}
+namespace TKC_Cloud.Services.Cleanup;
 
 public class UploadCleanupService : BackgroundService
 {

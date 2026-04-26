@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using TKC_Cloud.Models;
 
 namespace TKC_Cloud.Data;
 

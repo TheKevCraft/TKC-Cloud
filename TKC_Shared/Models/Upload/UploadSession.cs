@@ -1,4 +1,4 @@
-namespace TKC_Cloud.Models;
+namespace TKC_Shared.Models.Upload;
 
 public class UploadSession
 {

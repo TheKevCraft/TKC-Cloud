@@ -4,7 +4,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using TKC_Cloud.Data;
-using TKC_Cloud.Models;
 
 namespace TKC_Cloud.Services;
 

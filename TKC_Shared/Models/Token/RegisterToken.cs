@@ -1,4 +1,4 @@
-namespace TKC_Cloud.Web.Models;
+namespace TKC_Shared.Models.Token;
 
 public class RegisterToken
 {

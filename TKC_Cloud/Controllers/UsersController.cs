@@ -36,11 +36,4 @@ public class UsersController : ControllerBase
 
         return Ok(users);
     }
-
-    // Helpers
-    public class UserDto
-    {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-    }
 }
