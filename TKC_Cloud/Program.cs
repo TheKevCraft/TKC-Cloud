@@ -22,7 +22,8 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:5223")
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .WithExposedHeaders("Content-Disposition");
+            .WithExposedHeaders("Content-Disposition")
+            .SetPreflightMaxAge(TimeSpan.FromHours(1));
     });
 });
 

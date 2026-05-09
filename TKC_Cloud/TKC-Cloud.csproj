@@ -10,6 +10,10 @@
     <NoWarn>1591</NoWarn> <!-- Unterdruckt fehlende XML-Kommentar-Warnungen -->
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- ASP.NET Core OpenAPI / Swagger -->
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />

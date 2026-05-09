@@ -5,12 +5,17 @@ using MudBlazor;
 using MudBlazor.Services;
 using TKC_Cloud.Web;
 using TKC_Cloud.Web.Services;
-using TKC_Cloud.Web.Services.ServicesHealthCheck;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+// Root Components
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// API BaseUrl (in appsettings)
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5166/";
+
+// MudBlazor
 builder.Services.AddMudServices(config =>
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
@@ -21,29 +26,34 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.HideTransitionDuration = 200;
     config.SnackbarConfiguration.ShowTransitionDuration = 200;
 });
+
+// Authentication & Authorization
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthProvider>();
 builder.Services.AddScoped<TokenHandler>();
 
-// Health Checks Service
-builder.Services.AddHttpClient();
+// Application Services
 builder.Services.AddScoped<GlobalErrorService>();
+builder.Services.AddScoped<ConnectionStatusService>();
 
-//builder.Services.AddScoped<IServiceHealthCheck, ClouldServiceHealthCheck>();
-
-//builder.Services.AddScoped<HealthCheckService>();
-
+// Named HttpClient for auth API-Requests
 builder.Services.AddHttpClient("API", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5166/");
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 })
 .AddHttpMessageHandler<TokenHandler>();
 
+// Named HttpClient for none Token Requests
 builder.Services.AddHttpClient("Auth", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5166/"); 
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10); 
 });
 
-builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
+// Standard HttpClient = API-Client
+// for Service Requests with simple HttpClient per DI 
+builder.Services.AddScoped(sp => 
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));
 
 await builder.Build().RunAsync();

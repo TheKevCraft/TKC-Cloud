@@ -5,6 +5,7 @@
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject GlobalErrorService ErrorService
+@inject ConnectionStatusService StatusService
 
 <MudThemeProvider @bind-IsDarkMode="@Darkmode" Theme="@_theme" />
 <MudDialogProvider />
@@ -166,7 +167,7 @@
     private IEnumerable<(string Text, string Url, bool Disabled)> NavItems => new[]
     {
         ("Home", "/", false),
-        ("Cloud", "/cloud", !CloudIsAvailable),
+        ("Cloud", "/cloud", !StatusService.IsCloudOnline),
         ("Server", "/server", !ServerManagerIsAvailable)
     };
 
@@ -174,8 +175,6 @@
     private string AvatarIcon = "T";
 
     private bool ServerManagerIsAvailable = false;
-    private bool CloudIsAvailable = false;
-
 
     private ErrorBoundary? _errorBoundary;
     //private bool _errorShown;
@@ -188,6 +187,19 @@
 
         if (bool.TryParse(saved, out var result))
             Darkmode = result;
+
+        StatusService.OnStatusChanged += StateHasChanged;
+
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await StatusService.CheckAsync();
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+        });
+
+        await StatusService.CheckAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -238,5 +250,10 @@
     {
         // TODO: Logout Logic
         return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        StatusService.OnStatusChanged -= StateHasChanged;
     }
 }
