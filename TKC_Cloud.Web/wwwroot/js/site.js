@@ -1,3 +1,62 @@
+// ERROR HANDLER SYSTEM
+window.globalErrorHandler = {
+
+    register: function (dotNetHelper) {
+
+        // Normal JS Error
+        window.addEventListener("error", function (event) {
+
+            const message = 
+                event?.error?.message ||
+                event?.message ||
+                "Unknown error";
+
+            dotNetHelper.invokeMethodAsync(
+                "HandlerError",
+                message);
+        });
+
+        // Promise / async Error
+        window.addEventListener("unhandledrejection", function (event) {
+
+            let message = "Unhandled promise rejection";
+
+            if (event.reason)   {
+
+                if (typeof event.reason === "string")
+                    message = event.message;
+
+                else if (event.reason.message)
+                    message = event.reason.message;
+            }
+
+            dotNetHelper.invokeMethodAsync(
+                "HandleError",
+                message);
+        });
+
+        // Blazor Disconnet / WASM Error
+        /*window.Blazor.defaultReconnectionHandler._reconnectCallback = function () {
+            
+            dotNetHelper.invokeMethodAsync(
+                "HandleDisconnect");
+        };*/
+
+        // Network observer
+        window.addEventListener("offline", function () {
+
+            dotNetHelper.invokeMethodAsync(
+                "HandleDisconnect");
+        });
+
+        window.addEventListener("online", function () {
+            dotNetHelper.invokeMethodAsync(
+            "HandleReconnect");
+        });
+    }
+};
+
+// DOWNLOAD SYSTEM
 window.downloadFile = (fileName, bytesBase64) => {
     const link = document.createElement('a');
     link.download = fileName;

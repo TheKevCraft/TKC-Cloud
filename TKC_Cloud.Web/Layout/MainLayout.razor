@@ -1,22 +1,242 @@
-﻿@inherits LayoutComponentBase
+﻿@using TKC_Cloud.Web.Services
+@using Microsoft.AspNetCore.Components.Web
+@inherits LayoutComponentBase
 
-<MudThemeProvider/>
-<MudDialogProvider/>
-<MudSnackbarProvider/>
-<MudPopoverProvider/>
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject GlobalErrorService ErrorService
+
+<MudThemeProvider @bind-IsDarkMode="@Darkmode" Theme="@_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
 
 <MudLayout>
 
-    <MudAppBar Elevation="1">
-        TKC Cloud
+    <MudAppBar Elevation="1" Dense="true">
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%;">
+            
+            <!-- LEFT: MOBILE NAV & NAME -->
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudHidden Breakpoint="Breakpoint.LgAndUp">
+                    <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleDrawer" />
+                </MudHidden>
+                <MudText Typo="Typo.h5">TKCN</MudText>
+            </MudStack>
+
+            <MudHidden Breakpoint="Breakpoint.MdAndDown">
+                <!-- MAIN PAGES:NAVIGATION in center -->
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+
+                    <MudButtonGroup Variant="Variant.Text">
+                        @foreach (var item in NavItems)
+                        {
+                            <MudButton Href="@item.Url" Disabled="@item.Disabled">
+                                @item.Text
+                            </MudButton>
+                        }
+                    </MudButtonGroup>
+
+                </MudStack>
+            </MudHidden>
+
+            <!-- RIGHT SIDE -->
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+
+                <MudToggleIconButton 
+                    Toggled="@Darkmode"
+                    ToggledChanged="OnDarkModeChanged"
+                    Icon="@Icons.Material.Filled.LightMode"
+                    ToggledIcon="@Icons.Material.Filled.DarkMode"
+                    Color="Color.Inherit" />
+
+                <AuthorizeView>
+                    <Authorized Context="authContext">
+
+                        <MudMenu>
+
+                            <ActivatorContent Context="menuContext">
+                                <MudAvatar Style="cursor:pointer;">
+                                    @if (!string.IsNullOrWhiteSpace(AvatarSrc))
+                                    {
+                                        <MudImage Src="@AvatarSrc" />
+                                    }
+                                    else
+                                    {
+                                        <MudText>@AvatarIcon</MudText>
+                                    }
+                                </MudAvatar>
+                            </ActivatorContent>
+
+                            <ChildContent>
+                                <MudMenuItem Href="/account">Account</MudMenuItem>
+                                <MudMenuItem Href="/settings">Settings</MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem OnClick="@Logout">Logout</MudMenuItem>
+                            </ChildContent>
+
+                        </MudMenu>
+
+                    </Authorized>
+
+                    <NotAuthorized>
+                        <MudButtonGroup Variant="Variant.Text">
+                            <MudButton Href="/login">Login</MudButton>
+                            <MudButton Href="/register">Register</MudButton>
+                        </MudButtonGroup>
+                    </NotAuthorized>
+
+                </AuthorizeView>
+
+            </MudStack>
+
+        </MudStack>
+
     </MudAppBar>
 
-    <MudDrawer Open="true" Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always">
-        <NavMenu/>
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Temporary"
+               Elevation="1"
+               Anchor="Anchor.Left">
+               
+        <MudNavMenu>
+            @foreach (var item in NavItems)
+            {
+                <MudNavLink Href="@item.Url"
+                            Disabled="@item.Disabled"
+                            OnClick="@CloseDrawer"
+                            Match="@(item.Url == "/" ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                    @item.Text            
+                </MudNavLink>
+            }
+        </MudNavMenu>
+
+        <MudDivider />
+
+        <AuthorizeView>
+            <Authorized>
+                <MudNavLink Href="/account">Account</MudNavLink>
+                <MudNavLink Href="/settings">Settings</MudNavLink>
+                <MudNavLink OnClick="@Logout">Logout</MudNavLink>
+            </Authorized>
+            <NotAuthorized>
+                <MudNavLink Href="/login">Login</MudNavLink>
+                <MudNavLink Href="/register">Register</MudNavLink>
+            </NotAuthorized>
+        </AuthorizeView>
+    
     </MudDrawer>
 
     <MudMainContent>
-        @Body
+
+        <ErrorBoundary @ref="_errorBoundary">
+
+            <ChildContent>
+                @Body
+            </ChildContent>
+
+            <ErrorContent Context="exception">
+            
+                @{
+                    _ = HandleRenderError(exception);
+                }
+
+                <MudContainer Class="pa-6">
+            
+                    <MudAlert Severity="Severity.Error">
+                        Ein unerwarteter Fehler ist aufgetreten.
+                    </MudAlert>
+
+                </MudContainer>
+
+            </ErrorContent>
+
+        </ErrorBoundary>
+        
     </MudMainContent>
 
 </MudLayout>
+
+@code {
+    // Parametiers
+    private bool Darkmode;
+    private MudTheme _theme = new();
+    private bool _drawerOpen = false;
+    private IEnumerable<(string Text, string Url, bool Disabled)> NavItems => new[]
+    {
+        ("Home", "/", false),
+        ("Cloud", "/cloud", !CloudIsAvailable),
+        ("Server", "/server", !ServerManagerIsAvailable)
+    };
+
+    private string AvatarSrc = "";
+    private string AvatarIcon = "T";
+
+    private bool ServerManagerIsAvailable = false;
+    private bool CloudIsAvailable = false;
+
+
+    private ErrorBoundary? _errorBoundary;
+    //private bool _errorShown;
+    private string? _lastError;
+
+    // Funktions
+    protected override async Task OnInitializedAsync()
+    {
+        var saved = await JS.InvokeAsync<string>("theme.get", "darkmode");
+
+        if (bool.TryParse(saved, out var result))
+            Darkmode = result;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ErrorService.InitializeAsync();
+        }
+    }
+
+    private async Task HandleRenderError(Exception ex)
+    {
+        if (_lastError == ex.Message)
+            return;
+
+        _lastError = ex.Message;
+
+        await Task.Yield();
+
+        Snackbar.Add(
+            ex.Message,
+            Severity.Error,
+            config => 
+            {
+                config.ShowCloseIcon = true;
+                config.RequireInteraction = true;
+            }
+        );
+    }
+
+    private async Task OnDarkModeChanged(bool value)
+    {
+        Darkmode = value;
+        await JS.InvokeVoidAsync("theme.set", "darkmode", value.ToString());
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private Task Logout()
+    {
+        // TODO: Logout Logic
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,67 @@
+﻿@page "/not-found"
+@layout MainLayout
+
+<!--<h3>Not Found</h3>
+<p>Sorry, the content you are looking for does not exist.</p>!-->
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="d-flex justify-center align-center" Style="min-height: 80vh;">
+    <MudPaper Elevation="6" Class="pa-8 text-center rounded-xl w-100">
+        
+        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline"
+                 Size="Size.Large"
+                 Color="Color.Error"
+                 Class="mb-4"
+                 Style="font-size: 90px;" />
+
+        <MudText Typo="Typo.h2" GutterBottom=true Class="fw-bold">
+            404
+        </MudText>
+
+        <MudText Typo="Typo.h4" GutterBottom=true>
+            Seite nicht gefunden
+        </MudText>
+
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+            Die angeforderte Seite existiert nicht, wurde verschoben
+            oder du hast keine Berechtigung darauf zuzugreifen.
+        </MudText>
+
+        <MudDivider Class="my-4" />
+
+        <MudStack Row=true Spacing="2" Justify="Justify.Center" Class="mt-4">
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Home"
+                       Href="/">
+                Zur Startseite
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="@GoBack">
+                Zuruck
+            </MudButton>
+
+        </MudStack>
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-6 d-block">
+            Fehlercode: HTTP 404
+        </MudText>
+
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Inject]
+    private NavigationManager Nav { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    private async Task GoBack()
+    {
+        await JS.InvokeVoidAsync("history.back");
+    }
+}
