@@ -11,6 +11,20 @@
                 "CloudAPI",
                 "ServerManager"
             ]
+        },
+        {
+            "name": "CloudAPI + WebUI",
+            "configurations": [
+                "WebUI",
+                "CloudAPI"
+            ]
+        },
+        {
+            "name": "ServerManager + WebUI",
+            "configurations": [
+                "WebUI",
+                "ServerManager"
+            ]
         }
     ],
     "configurations": [
