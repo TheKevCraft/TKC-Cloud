@@ -252,7 +252,7 @@ public class FileService : IFileService
         if (entry == null)
             return null;
 
-        if (!_storage.Exists(userId, entry.StoredFileName))
+        if (!await _storage.Exists(userId, entry.StoredFileName))
             return null;
 
         var stream = await _storage.OpenReadAsync(userId, entry.StoredFileName);

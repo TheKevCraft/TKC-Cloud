@@ -2,11 +2,6 @@ using Microsoft.Extensions.Options;
 
 namespace TKC_Cloud.Services.Storage;
 
-public class StorageSettings
-{
-    public string BasePath { get; set; } = "Storage";
-}
-
 public class LocalStorageService : IStorageService
 {
     private readonly string _basePath;
@@ -14,7 +9,7 @@ public class LocalStorageService : IStorageService
 
     public LocalStorageService(IOptions<StorageSettings> options, ILogger<LocalStorageService> logger)
     {
-        _basePath = Path.GetFullPath(options.Value.BasePath);
+        _basePath = Path.GetFullPath(options.Value.Local.BasePath);
         _logger = logger;
 
         if (!Directory.Exists(_basePath))
@@ -111,7 +106,7 @@ public class LocalStorageService : IStorageService
         return Task.FromResult(info.Length);
     }
 
-    public bool Exists(Guid userId, string fileName)
+    public async Task<bool> Exists(Guid userId, string fileName)
     {
         return File.Exists(GetPath(userId, fileName));
     }
