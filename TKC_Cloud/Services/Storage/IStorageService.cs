@@ -9,6 +9,8 @@ public interface IStorageService
     Task DeleteAsync(Guid userId,string fileName);
 
     Task<long> GetSizeAsync(Guid userId, string fileName);
+    Task<DateTime> GetCreatedAtAsync(Guid userId, string fileName);
     
+    Task<IEnumerable<string>> ListFilesAsync(Guid userId);
     Task<bool> Exists(Guid userId,string fileName);
 }

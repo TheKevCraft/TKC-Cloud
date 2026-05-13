@@ -106,6 +106,27 @@ public class LocalStorageService : IStorageService
         return Task.FromResult(info.Length);
     }
 
+    public Task<DateTime> GetCreatedAtAsync(Guid userId, string fileName)
+    {
+        var path = GetPath(userId, fileName);
+
+        if (!File.Exists(path))
+            throw new FileNotFoundException();
+
+        return Task.FromResult(File.GetCreationTimeUtc(path));
+    }
+
+    public async Task<IEnumerable<string>> ListFilesAsync(Guid userid)
+    {
+        var userPath = GetUserFolder(userid);
+
+        if (!Directory.Exists(userPath))
+            return Enumerable.Empty<string>();
+
+        return Directory.GetFiles(userPath)
+            .Select(Path.GetFileName)!;
+    }
+
     public async Task<bool> Exists(Guid userId, string fileName)
     {
         return File.Exists(GetPath(userId, fileName));

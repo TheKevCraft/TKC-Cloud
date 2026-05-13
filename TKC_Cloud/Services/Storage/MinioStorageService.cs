@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Minio;
+using Minio.ApiEndpoints;
 using Minio.DataModel.Args;
 
 namespace TKC_Cloud.Services.Storage;
@@ -90,6 +91,36 @@ public class MinioStorageService : IStorageService
             .WithObject(GetObjectName(userId, fileName)));
 
         return stat.Size;
+    }
+
+    public async Task<DateTime> GetCreatedAtAsync(Guid userId, string fileName)
+    {
+        var key = $"{userId}/{fileName}";
+
+        var stat = await _client.StatObjectAsync(new StatObjectArgs()
+            .WithBucket(_settings.S3.BucketName)
+            .WithObject(key));
+
+        return stat.LastModified;
+    }
+
+    public async Task<IEnumerable<string>> ListFilesAsync(Guid userId)
+    {
+        var prefix = $"{userId}/";
+
+        var files = new List<string>();
+
+        var objects = _client.ListObjectsEnumAsync(new ListObjectsArgs()
+            .WithBucket(_settings.S3.BucketName)
+            .WithPrefix(prefix)
+            .WithRecursive(true));
+
+        await foreach (var obj in objects)
+        {
+            files.Add(Path.GetFileName(obj.Key));
+        }
+
+        return files;
     }
 
     public async Task<bool> Exists(Guid userId, string fileName)

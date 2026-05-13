@@ -22,4 +22,14 @@ public class StorageServiceFactory : IStorageServiceFactory
             _ => throw new NotSupportedException("Unknown storage provider")
         };
     }
+
+    public IStorageService Create(string provider)
+    {
+        return provider.ToLower() switch
+        {
+            "local" => _provider.GetRequiredService<LocalStorageService>(),
+            "minio" => _provider.GetRequiredService<MinioStorageService>(),
+            _ => throw new NotSupportedException("Unknown storage provider")
+        };
+    }
 }

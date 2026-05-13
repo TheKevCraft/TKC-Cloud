@@ -174,6 +174,9 @@ builder.Services.AddScoped<IStorageService>(serviceProvider =>
 // Periodically removes expired or incomplete uploads.
 builder.Services.AddHostedService<UploadCleanupService>();
 
+// sync data between to storage providers on application start
+builder.Services.AddHostedService<StorageMigrationService>();
+
 #endregion
 
 var app = builder.Build();

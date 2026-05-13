@@ -3,6 +3,7 @@ namespace TKC_Shared.Config;
 public class StorageSettings
 {
     public string Provider { get; set; } = "Local";
+    public string? PreviousProvider { get; set; }
     public LocalSettings Local { get; set; } = new();
     public S3Stettings S3 { get; set; } = new();
 }
