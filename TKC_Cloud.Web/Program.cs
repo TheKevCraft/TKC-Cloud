@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Services;
 using TKC_Cloud.Web;
@@ -13,7 +14,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // API BaseUrl (in appsettings)
-var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5166/";
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7296/";
 
 // MudBlazor
 builder.Services.AddMudServices(config =>

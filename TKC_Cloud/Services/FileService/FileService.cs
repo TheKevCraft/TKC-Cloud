@@ -24,6 +24,61 @@ public class FileService : IFileService
             .ToListAsync();
     }
 
+    public async Task<PagedResult<FileEntry>> GetPagedAsync(Guid userId, FilePagedRequest request)
+    {
+        if (request.Skip < 0)
+            request.Skip = 0;
+
+        if (request.Take <= 0)
+            request.Take = 50;
+
+        if (request.Take >= 100)
+            request.Take = 100;
+
+        IQueryable<FileEntry> query = _context.Files
+            .Where(f => f.OwnerId == userId && !f.IsDeleted);
+
+        // Search
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            query = query.Where(f => 
+                f.OriginalFileName.Contains(request.Search));
+        }
+
+        var sortDirection = request.SortDirection?.ToLowerInvariant();
+
+        if (sortDirection == "none")
+            sortDirection = null;
+
+        // Sort
+        query = (request.SortLabel?.ToLower(), sortDirection) switch
+        {
+            ("name", "descending") => query.OrderByDescending(f => f.OriginalFileName),
+            ("name", "ascending") => query.OrderBy(f => f.OriginalFileName),
+
+            ("size", "descending") => query.OrderByDescending(f => f.Size),
+            ("size", "ascending") => query.OrderBy(f => f.Size),
+
+            ("created", "descending") => query.OrderByDescending(f => f.CreatedAt),
+            ("created", "ascending") => query.OrderBy(f => f.CreatedAt),
+
+            _ => query.OrderByDescending(f => f.CreatedAt)
+        };
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip(request.Skip)
+            .Take(request.Take)
+            .ToListAsync();
+
+        return new PagedResult<FileEntry>
+        {
+            Items = items,
+            TotalCount = totalCount
+        };
+    }
+
     // Upload
     public async Task<FileEntry> UploadAsync(IFormFile file, Guid userId)
     {
@@ -246,6 +301,7 @@ public class FileService : IFileService
 
 
     // Download
+
     public async Task<(Stream Stream, FileEntry Info)?> DownloadAsync(Guid id, Guid userId)
     {
         var entry = await _context.Files.FirstOrDefaultAsync(f => f.Id == id && f.OwnerId == userId && !f.IsDeleted);

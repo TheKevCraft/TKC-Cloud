@@ -19,14 +19,17 @@
                 "CloudAPI"
             ],
             "preLaunchTask": "Build Solution",
-            "stopAll": true
+            "stopAll": true,
         },
         {
             "name": "ServerManager + WebUI",
             "configurations": [
                 "WebUI",
                 "ServerManager"
-            ]
+            ],
+            "env": {
+
+            }
         }
     ],
     "configurations": [

@@ -1,4 +1,3 @@
-@page "/files"
 @attribute [Authorize]
 
 @inject IHttpClientFactory ClientFactory
@@ -100,22 +99,74 @@
     // Reload Table with Server-Data
     private async Task<TableData<FileEntry>> ServerReload(TableState state, CancellationToken token)
     {
-        var data = await api!.GetFromJsonAsync<List<FileEntry>>("api/files", token) ?? new List<FileEntry>();
+        var request = new FilePagedRequest
+        {
+            Skip = state.Page * state.PageSize,
+            Take = state.PageSize,
+
+            Search = searchString,
+            
+            SortLabel = state.SortLabel,
+            SortDirection = state.SortDirection.ToString()
+        };
+
+        var response = await api!.PostAsJsonAsync($"api/files/paged", request, token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new TableData<FileEntry>
+            {
+                TotalItems = 0,
+                Items = new List<FileEntry>()
+            };
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<FileEntry>>(token);
+
+        if (result == null)
+        {
+            return new TableData<FileEntry>
+            {
+                TotalItems = 0,
+                Items = new List<FileEntry>()
+            };
+        }
+
+        return new TableData<FileEntry>
+        {
+            TotalItems = result.TotalCount,
+            Items = result.Items
+        };
+
+        // Optional lokale Suche (nur auf den geladen Daten)
+        // Fur echte serverseitige Suche sollte searchString ebenfalls
+        // als Query-Parameter an die API ubergeben werden.
+        /*var items = response.Items;
 
         if (!string.IsNullOrWhiteSpace(searchString))
         {
-            data = data
+            items = items
                 .Where(f => f.OriginalFileName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
-        data = state.SortLabel switch
+        items = state.SortLabel switch
         {
-            "name" => data.OrderByDirection(state.SortDirection, f => f.OriginalFileName).ToList(),
-            "size" => data.OrderByDirection(state.SortDirection, f => f.Size).ToList(),
-            "created" => data.OrderByDirection(state.SortDirection, f => f.CreatedAt).ToList(),
-            _ => data
+            "name" => items.OrderByDirection(state.SortDirection, f => f.OriginalFileName).ToList(),
+            "size" => items.OrderByDirection(state.SortDirection, f => f.Size).ToList(),
+            "created" => items.OrderByDirection(state.SortDirection, f => f.CreatedAt).ToList(),
+            _ => items
         };
+
+        return new TableData<FileEntry>
+        {
+            // Gesamtzahl aller Dateien aus API
+            TotalItems = response.TotalCount,
+
+            // Nur die aktuell geladene Seite3
+            Items = items
+        };
+        /*var data = await api!.GetFromJsonAsync<List<FileEntry>>("api/files", token) ?? new List<FileEntry>();
 
         var paged = data
             .Skip(state.Page * state.PageSize)
@@ -126,7 +177,7 @@
         {
             TotalItems = data.Count,
             Items = paged
-        };
+        };*/
     } 
 
     // Search

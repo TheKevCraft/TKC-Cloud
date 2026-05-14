@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(optins =>
 {
     optins.Limits.MaxRequestBodySize = null; // unbegrenzt
+    optins.ListenAnyIP(7296, listen => listen.UseHttps());
 });
 
 #endregion
@@ -30,7 +31,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("dev", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5223")
+            .WithOrigins("https://localhost:7151")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .WithExposedHeaders("Content-Disposition")

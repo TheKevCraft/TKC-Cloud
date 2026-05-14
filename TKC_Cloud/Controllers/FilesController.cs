@@ -32,6 +32,16 @@ public class FilesController : ControllerBase
         return Ok(files);
     }
 
+    // Get Files paged
+    [HttpPost("paged")]
+    public async Task<IActionResult> GetPaged([FromBody] FilePagedRequest request)
+    {
+        var userId = GetUserId();
+        var result = await _fileService.GetPagedAsync(userId, request);
+
+        return Ok(result);
+    }
+
     #region Preview
     [HttpPost("{id}/create-access")]
     public async Task<IActionResult> CreateAccess(Guid id)
