@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
-using TKC_Cloud.Web;
-using TKC_Cloud.Web.Services;
+using TKC_Web;
+using TKC_Web.Services;
 using TKC_Shared.Helper;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

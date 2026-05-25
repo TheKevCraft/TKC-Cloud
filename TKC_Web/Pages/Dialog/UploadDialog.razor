@@ -1,4 +1,4 @@
-@using TKC_Cloud.Web.Services
+@using TKC_Web.Services
 @inject IFileUploadClient FileUploadClient
 @inject FormatHelper FormatHelper
 
@@ -18,7 +18,7 @@
 
             <!--@if (_uploads.Count > 0)
             {
-                <<MudPaper Class="pa-3" Outlined=true>
+                <MudPaper Class="pa-3" Outlined=true>
                     <MudText Typo="Typo.subtitle1" Class="mb-2">Upload Progress</MudText>
 
                     <MudProgressLinear Value="_overallProgress"
@@ -33,7 +33,7 @@
                     <MudList T="List<UploadItem>" Dense>
                         @foreach (var upload in _uploads)
                         {
-                            <<MudListItem>
+                            <MudListItem>
                                 <MudStack Spacing="1">
                                     <MudStack Row Justify="Justify.SpaceBetween">
                                         <MudText>@upload.FileName</MudText>
@@ -51,16 +51,16 @@
 
                                     @if (!string.IsNullOrWhiteSpace(upload.ErrorMessage))
                                     {
-                                        <<MudAlert Severity="Severity.Error"
+                                        <MudAlert Severity="Severity.Error"
                                                   Dense=true
                                                   Variant="Variant.Text">
                                             @upload.ErrorMessage
                                         </MudAlert>
                                     }
-                                <</MudStack>
+                                </MudStack>
                             </MudListItem>
                         }
-                    <</MudList>
+                    </MudList>
                 </MudPaper>
             }
 

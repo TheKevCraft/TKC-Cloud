@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public class ProgressableStreamContent : HttpContent
 {

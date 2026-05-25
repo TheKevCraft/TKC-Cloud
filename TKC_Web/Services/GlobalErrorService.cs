@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public class GlobalErrorService : IAsyncDisposable
 {

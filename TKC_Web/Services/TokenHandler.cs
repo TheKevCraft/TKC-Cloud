@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.JSInterop;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public class TokenHandler : DelegatingHandler
 {

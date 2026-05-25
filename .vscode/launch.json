@@ -37,7 +37,7 @@
             "name": "WebUI",
             "type": "dotnet",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/TKC_Cloud.Web/TKC_Cloud.Web.csproj",
+            "projectPath": "${workspaceFolder}/TKC_Web/TKC_Web.csproj",
         },
         {
             "name": "CloudAPI",

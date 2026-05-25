@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using TKC_Shared.DTOs;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public class ConnectionStatusService
 {

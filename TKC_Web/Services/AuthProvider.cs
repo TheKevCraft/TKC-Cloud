@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public class AuthProvider : AuthenticationStateProvider
 {

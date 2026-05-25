@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components.Forms;
 
-namespace TKC_Cloud.Web.Services;
+namespace TKC_Web.Services;
 
 public interface IFileUploadClient
 {
