@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TKC_Cloud.Data;
 using Microsoft.EntityFrameworkCore;
+using TKC_Cloud.Services;
 
 namespace TKC_Cloud.Controllers;
 
@@ -12,10 +13,12 @@ namespace TKC_Cloud.Controllers;
 public class ShareController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IUserService _userService;
 
-    public ShareController(AppDbContext db)
+    public ShareController(AppDbContext db, IUserService userService)
     {
         _db = db;
+        _userService = userService;
     }
 
     // Create Share
@@ -23,7 +26,7 @@ public class ShareController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Create(CreateShareDto dto)
     {
-        var userId = GetUserId();
+        var userId = _userService.GetUserId(User);
 
         var share = new Share
         {
@@ -66,7 +69,7 @@ public class ShareController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetShares(Guid fileId)
     {
-        var userId = GetUserId();
+        var userId = _userService.GetUserId(User);
 
         var shares = await _db.Shares
             .Where(s => s.FileId == fileId && s.OwnerId == userId)
@@ -80,7 +83,7 @@ public class ShareController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Update(Guid id, UpdateShareDto dto)
     {
-        var userId = GetUserId();
+        var userId = _userService.GetUserId(User);
 
         var share = await _db.Shares
             .Include(s => s.Permissions)
@@ -117,7 +120,7 @@ public class ShareController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetUserId();
+        var userId = _userService.GetUserId(User);
 
         var share = await _db.Shares
             .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
@@ -132,15 +135,6 @@ public class ShareController : ControllerBase
     }
 
     // Helpers
-    private Guid GetUserId()
-    {
-        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (claim == null || !Guid.TryParse(claim.Value, out var userId))
-            throw new UnauthorizedAccessException();
-    
-        return Guid.Parse(claim.Value);
-    }
-
     private static string GenerateToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(32);

@@ -6,6 +6,10 @@ using TKC_Cloud.Services.Cleanup;
 using TKC_Cloud.Services.Storage;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Minio;
+using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // WARNING: In production, consider setting a reasonble limit to prevent abuse.
 builder.WebHost.ConfigureKestrel(optins =>
 {
-    optins.Limits.MaxRequestBodySize = null; // unbegrenzt
+    optins.Limits.MaxRequestBodySize = 5L * 1024 * 1024 * 1024; // unbegrenzt
     optins.ListenAnyIP(7296, listen => listen.UseHttps());
 });
 
@@ -117,6 +121,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 #region Configuration Binding
 
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 5L * 1024 * 1024 * 1024;
+});
+
 // Bind the "Storage" section to StorageSettings.
 //
 // Example:
@@ -135,6 +144,23 @@ builder.Services.Configure<StorageSettings>(
 builder.Services.Configure<UploadCleanupSettings>(
     builder.Configuration.GetSection("UploadCleanup"));
 
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var settings = sp
+        .GetRequiredService<IOptions<StorageSettings>>()
+        .Value;
+
+    var s3 = settings.S3;
+
+    return new MinioClient()
+        .WithEndpoint(s3.Endpoint)
+        .WithCredentials(
+            s3.AccessKey,
+            s3.SecretKey)
+        .WithSSL(s3.UseSSL)
+        .Build();
+});
+
 #endregion
 
 #region Application Services
@@ -145,6 +171,8 @@ builder.Services.AddSingleton<FileAccessTokenService>();
 
 // Main file handling service.
 builder.Services.AddScoped<IFileService, FileService>();
+//builder.Services.AddScoped<IMultipartUploadService, MultipartUploadService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 #endregion
 

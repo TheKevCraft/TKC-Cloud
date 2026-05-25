@@ -21,8 +21,10 @@ public class AppDbContext : DbContext
 
 
     // Upload-System
-    public DbSet<UploadSession> UploadSessions => Set<UploadSession>();
-    public DbSet<UploadedChunk> uploadedChunks => Set<UploadedChunk>();
+    
+
+    // Upload-System-v2
+    
 
     // Share-System
     public DbSet<Share> Shares => Set<Share>();
@@ -44,9 +46,7 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // Upload
-        modelBuilder.Entity<UploadedChunk>()
-            .HasIndex(c => new { c.UploadSessionId, c.ChunkIndex })
-            .IsUnique();
+        
 
         // User
         modelBuilder.Entity<User>()

@@ -1,24 +1,17 @@
-@attribute [Authorize]
-
 @inject IHttpClientFactory ClientFactory
+@inject FormatHelper FormatHelper
 @inject IJSRuntime js
 @inject IDialogService DialogService
 
 <MudContainer>
-
-    <!-- Drag & Drop Zone for Unload (secondar) -->
-    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                   FilesChanged="UploadFiles"
-                   DragAndDrop=true
-                   AppendMultipleFiles=true
-                   Hidden=false />
-
-
-    <!-- Main Table (Files & Folders) -->
     <MudTable ServerData="ServerReload" @ref="table" Dense=true Hover=true>
 
         <ToolBarContent>
-            <MudBreadcrumbs Items="path" MaxItems="5" />
+
+            <MudStack Spacing="1">
+                <MudBreadcrumbs Items="path" MaxItems="5" />
+                <MudIconButton Icon="@Icons.Material.Filled.FileUpload" OnClick="@UploadFiles" />
+            </MudStack>
 
             <MudSpacer />
 
@@ -39,7 +32,7 @@
 
         <RowTemplate>
             <MudTd DataLabel="Name">@context.OriginalFileName</MudTd>
-            <MudTd DataLabel="Size">@FormatSize(context.Size)</MudTd>
+            <MudTd DataLabel="Size">@FormatHelper.Size(context.Size)</MudTd>
             <MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString()</MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.Visibility"
@@ -137,47 +130,6 @@
             TotalItems = result.TotalCount,
             Items = result.Items
         };
-
-        // Optional lokale Suche (nur auf den geladen Daten)
-        // Fur echte serverseitige Suche sollte searchString ebenfalls
-        // als Query-Parameter an die API ubergeben werden.
-        /*var items = response.Items;
-
-        if (!string.IsNullOrWhiteSpace(searchString))
-        {
-            items = items
-                .Where(f => f.OriginalFileName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        items = state.SortLabel switch
-        {
-            "name" => items.OrderByDirection(state.SortDirection, f => f.OriginalFileName).ToList(),
-            "size" => items.OrderByDirection(state.SortDirection, f => f.Size).ToList(),
-            "created" => items.OrderByDirection(state.SortDirection, f => f.CreatedAt).ToList(),
-            _ => items
-        };
-
-        return new TableData<FileEntry>
-        {
-            // Gesamtzahl aller Dateien aus API
-            TotalItems = response.TotalCount,
-
-            // Nur die aktuell geladene Seite3
-            Items = items
-        };
-        /*var data = await api!.GetFromJsonAsync<List<FileEntry>>("api/files", token) ?? new List<FileEntry>();
-
-        var paged = data
-            .Skip(state.Page * state.PageSize)
-            .Take(state.PageSize)
-            .ToList();
-
-        return new TableData<FileEntry>
-        {
-            TotalItems = data.Count,
-            Items = paged
-        };*/
     } 
 
     // Search
@@ -188,26 +140,9 @@
     }
 
     // Drag & Drop
-    private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    private async Task UploadFiles()
     {
-        if (api is null) return;
-
-        foreach (var file in files)
-        {
-            using var content = new MultipartFormDataContent();
-
-            var fileContent = new StreamContent(file.OpenReadStream(long.MaxValue));
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
-            content.Add(fileContent, "file", file.Name);
-
-            var response = await api.PostAsync("api/files/upload", content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"Upload failed: {file.Name}");
-            }
-        }
+        await DialogService.ShowAsync<UploadDialog>();
     }
 
     // Buttons
@@ -259,20 +194,5 @@
         {
             await table.ReloadServerData();
         }
-    }
-
-    // Helpers
-    private string FormatSize(long bytes){
-        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-        double len = bytes;
-        int order = 0;
-
-        while (len >= 1024 && order < sizes.Length - 1)
-        {
-            order++;
-            len = len / 1024;
-        }
-
-        return $"{len:0.##} {sizes[order]}";
     }
 }

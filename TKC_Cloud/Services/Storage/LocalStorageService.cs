@@ -36,6 +36,8 @@ public class LocalStorageService : IStorageService
         await Task.CompletedTask;
     }
 
+    public async Task UploadAsync(Guid userId, string fileName, Stream stream, long size, string contentType) { throw new NotSupportedException(); } 
+
     public async Task AppendChunkAsync(Guid userId, string fileName, long position, Stream data)
     {
         var path = GetPath(userId, fileName);

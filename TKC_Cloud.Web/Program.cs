@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Services;
 using TKC_Cloud.Web;
 using TKC_Cloud.Web.Services;
+using TKC_Shared.Helper;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -32,6 +32,8 @@ builder.Services.AddMudServices(config =>
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthProvider>();
 builder.Services.AddScoped<TokenHandler>();
+builder.Services.AddScoped<IFileUploadClient, FileUploadClient>();
+builder.Services.AddScoped<FormatHelper>();
 
 // Application Services
 builder.Services.AddScoped<GlobalErrorService>();

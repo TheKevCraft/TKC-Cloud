@@ -22,12 +22,12 @@ public class UploadCleanupService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await CleanupAsync();
+           // await CleanupAsync();
             await Task.Delay(TimeSpan.FromMinutes(_settings.IntervalMinutes), stoppingToken);
         }
     }
 
-    private async Task CleanupAsync()
+    /*private async Task CleanupAsync()
     {
         using var scope = _scopeFactory.CreateScope();
 
@@ -50,5 +50,5 @@ public class UploadCleanupService : BackgroundService
         }
 
         await context.SaveChangesAsync();
-    }
+    }*/
 }

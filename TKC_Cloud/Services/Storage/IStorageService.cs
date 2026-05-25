@@ -2,15 +2,16 @@ namespace TKC_Cloud.Services.Storage;
 
 public interface IStorageService
 {
-    Task CreateFileAsync(Guid userId,string fileName);
-    Task AppendChunkAsync(Guid userId,string fineName, long position, Stream data);
-    Task<Stream> OpenReadAsync(Guid userId,string fileName);
-    Task MoveAsync(Guid userId,string source, string destination);
-    Task DeleteAsync(Guid userId,string fileName);
+    Task CreateFileAsync(Guid userId, string fileName);
+    Task UploadAsync(Guid userId, string fileName, Stream stream, long size, string contentType);
+    Task AppendChunkAsync(Guid userId, string fineName, long position, Stream data);
+    Task<Stream> OpenReadAsync(Guid userId, string fileName);
+    Task MoveAsync(Guid userId, string source, string destination);
+    Task DeleteAsync(Guid userId, string fileName);
 
     Task<long> GetSizeAsync(Guid userId, string fileName);
     Task<DateTime> GetCreatedAtAsync(Guid userId, string fileName);
     
     Task<IEnumerable<string>> ListFilesAsync(Guid userId);
-    Task<bool> Exists(Guid userId,string fileName);
+    Task<bool> Exists(Guid userId, string fileName);
 }

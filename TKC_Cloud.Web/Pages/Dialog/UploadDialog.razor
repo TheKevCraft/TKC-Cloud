@@ -1,0 +1,337 @@
+@using TKC_Cloud.Web.Services
+@inject IFileUploadClient FileUploadClient
+@inject FormatHelper FormatHelper
+
+<!--<MudDialog>
+    <<DialogContent>
+        <MudStack Spacing="3">
+
+            <!<MudText Typo="Typo.h6">Upload Files</MudText>-->
+
+            <!-- Drag & Drop Zone for Unload (secondar) --
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                           FilesChanged="UploadFiles"
+                           DragAndDrop=true
+                           AppendMultipleFiles=true
+                           Hidden=false
+                           Disabled="_isUploading" />
+
+            <!--@if (_uploads.Count > 0)
+            {
+                <<MudPaper Class="pa-3" Outlined=true>
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Upload Progress</MudText>
+
+                    <MudProgressLinear Value="_overallProgress"
+                                       Color="Color.Primary"
+                                       Rounded=true
+                                       Class="mb-3" />
+
+                    <MudText Typo="Typo.caption" Class="mb-3">
+                        @_overallProgress.ToString("0.0")%
+                    </MudText>
+
+                    <MudList T="List<UploadItem>" Dense>
+                        @foreach (var upload in _uploads)
+                        {
+                            <<MudListItem>
+                                <MudStack Spacing="1">
+                                    <MudStack Row Justify="Justify.SpaceBetween">
+                                        <MudText>@upload.FileName</MudText>
+                                        <MudText Typo="Typo.caption">@upload.StatusText</MudText>
+                                    </MudStack>
+
+                                    <MudProgressLinear Value="@upload.Progress"
+                                                       Rounded=true
+                                                       Color="@GetProgressColor(upload)"
+                                                       Size="Size.Small" />
+
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @FormatHelper.Size(upload.UploadedBytes) / @FormatHelper.Size(upload.TotalBytes)
+                                    </MudText>
+
+                                    @if (!string.IsNullOrWhiteSpace(upload.ErrorMessage))
+                                    {
+                                        <<MudAlert Severity="Severity.Error"
+                                                  Dense=true
+                                                  Variant="Variant.Text">
+                                            @upload.ErrorMessage
+                                        </MudAlert>
+                                    }
+                                <</MudStack>
+                            </MudListItem>
+                        }
+                    <</MudList>
+                </MudPaper>
+            }
+
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close"
+                   Disabled="_isUploading"
+                   Color="Color.Primary">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>-->
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+
+            <MudText Typo="Typo.h6">
+                Upload Files
+            </MudText>
+
+            <MudPaper Class="pa-4"
+                      Outlined="true">
+
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                               FilesChanged="UploadFiles"
+                               DragAndDrop="true"
+                               AppendMultipleFiles="true"
+                               Hidden="false"
+                               Disabled="_isUploading" />
+
+            </MudPaper>
+
+            @if (_uploads.Count > 0)
+            {
+                <MudPaper Class="pa-3" Outlined="true">
+
+                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.subtitle1">
+                            Upload Progress
+                        </MudText>
+
+                        <MudChip T="string" Color="Color.Primary"
+                                 Variant="Variant.Filled">
+                            @_overallProgress.ToString("0")%
+                        </MudChip>
+                    </MudStack>
+
+                    <MudProgressLinear Value="_overallProgress"
+                                       Color="Color.Primary"
+                                       Rounded="true"
+                                       Class="mt-2 mb-4" />
+
+                    <MudStack Spacing="2">
+
+                        @foreach (var upload in _uploads)
+                        {
+                            <MudPaper Class="pa-3" Outlined="true">
+
+                                <MudStack Spacing="1">
+
+                                    <MudStack Row Justify="Justify.SpaceBetween">
+
+                                        <MudText>
+                                            @upload.FileName
+                                        </MudText>
+
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@GetProgressColor(upload)">
+                                            @upload.StatusText
+                                        </MudChip>
+
+                                    </MudStack>
+
+                                    <MudProgressLinear Value="@upload.Progress"
+                                                       Rounded="true"
+                                                       Color="@GetProgressColor(upload)" />
+
+                                    <MudStack Row Justify="Justify.SpaceBetween">
+
+                                        <MudText Typo="Typo.caption">
+                                            @FormatHelper.Size(upload.UploadedBytes)
+                                            /
+                                            @FormatHelper.Size(upload.TotalBytes)
+                                        </MudText>
+
+                                        <MudText Typo="Typo.caption">
+                                            @upload.Progress.ToString("0")%
+                                        </MudText>
+
+                                    </MudStack>
+
+                                    @if (!string.IsNullOrWhiteSpace(upload.ErrorMessage))
+                                    {
+                                        <MudAlert Severity="Severity.Error"
+                                                  Dense="true"
+                                                  Variant="Variant.Text">
+                                            @upload.ErrorMessage
+                                        </MudAlert>
+                                    }
+
+                                </MudStack>
+
+                            </MudPaper>
+                        }
+
+                    </MudStack>
+
+                </MudPaper>
+            }
+
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+
+        <MudButton OnClick="Close"
+                   Disabled="_isUploading"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled">
+            Close
+        </MudButton>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private bool _isUploading;
+    private readonly List<UploadItem> _uploads = new();
+
+    private double _overallProgress => _uploads.Count == 0 ? 0 : _uploads.Average(x => x.Progress);
+
+    private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        if (files.Count == 0) return;
+
+        _isUploading = true;
+
+        foreach (var file in files)
+        {
+            var item = new UploadItem
+            {
+                FileName = file.Name,
+                TotalBytes = file.Size,
+                Status = UploadStatus.Uploading,
+                StatusText = "Uploading"
+            };
+
+            _uploads.Add(item);
+
+            StateHasChanged();
+
+            try
+            {
+                var progress = new Progress<long>(uploadedBytes =>
+                {
+                    item.UploadedBytes = uploadedBytes;
+
+                    item.Progress =
+                        item.TotalBytes == 0
+                            ? 0
+                            : (double)uploadedBytes / item.TotalBytes * 100;
+
+                    InvokeAsync(StateHasChanged);
+                });
+
+                await FileUploadClient.UploadFileAsync(file, progress);
+
+                item.UploadedBytes = item.TotalBytes;
+                item.Progress = 100;
+                item.Status = UploadStatus.Completed;
+                item.StatusText = "Completed";
+            }
+            catch (Exception ex)
+            {
+                item.Status = UploadStatus.Failed;
+                item.StatusText = "Failed";
+                item.ErrorMessage = ex.Message;
+            }
+
+            StateHasChanged();
+        }
+
+        _isUploading = false;
+
+        StateHasChanged();
+    }
+
+    /*private async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        if (files.Count == 0) return;
+
+        _isUploading = true;
+
+        foreach (var file in files)
+        {
+            var item = new UploadItem
+            {
+                FileName = file.Name,
+                TotalBytes = file.Size,
+                Status = UploadStatus.Uploading,
+                StatusText = "Starting upload..."
+            };
+
+            _uploads.Add(item);
+            StateHasChanged();
+
+            try
+            {
+                var progress = new Progress<UploadProgressReport>(report =>
+                {
+                    item.UploadedBytes = report.UploadedBytes;
+                    item.Progress = report.Progress;
+                    item.Status = UploadStatus.Uploading;
+                    item.StatusText = $"Uploading ({report.UploadedParts}/{report.TotalParts})";
+
+                    InvokeAsync(StateHasChanged);
+                });
+
+                await MultipartUploadClient.UploadFileAsync(file, chunkSize: 10 * 1024 * 1024, progress: progress);
+
+                item.UploadedBytes = item.TotalBytes;
+                item.Progress = 100;
+                item.Status = UploadStatus.Completed;
+                item.StatusText = "Completed";
+            }
+            catch (Exception ex)
+            {
+                item.Status = UploadStatus.Failed;
+                item.StatusText = "Failed";
+                item.ErrorMessage = ex.Message;
+            }
+
+            StateHasChanged();
+        }
+
+        _isUploading = false;
+        StateHasChanged();
+    }*/
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+
+    private static Color GetProgressColor(UploadItem item)
+    {
+        return item.Status switch
+        {
+            UploadStatus.Completed => Color.Success,
+            UploadStatus.Failed => Color.Error,
+            _ => Color.Primary
+        };
+    }
+
+    private sealed class UploadItem
+    {
+        public string FileName { get; set; } = string.Empty;
+        public long TotalBytes { get; set; }
+        public long UploadedBytes { get; set; }
+        public double Progress { get; set; }
+        public UploadStatus Status { get; set; }
+        public string StatusText { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+    }
+
+    private enum UploadStatus
+    {
+        Uploading,
+        Completed,
+        Failed
+    }
+}

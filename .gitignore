@@ -9,6 +9,7 @@ TKC_Cloud/Migrations/
 *.db
 *.db-shm
 *.db-wal
+*.lscache
 
 # dotenv files
 .env

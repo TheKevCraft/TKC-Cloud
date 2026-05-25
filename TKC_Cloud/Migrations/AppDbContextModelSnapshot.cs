@@ -17,7 +17,7 @@ namespace TKC_Cloud.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
 
-            modelBuilder.Entity("TKC_Cloud.Models.FileEntry", b =>
+            modelBuilder.Entity("TKC_Shared.Models.FileEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -57,7 +57,7 @@ namespace TKC_Cloud.Migrations
                     b.ToTable("Files");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.Folder", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Folder", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -86,57 +86,7 @@ namespace TKC_Cloud.Migrations
                     b.ToTable("Folders");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsRevoked")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
-                });
-
-            modelBuilder.Entity("TKC_Cloud.Models.RegisterToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("RegisterTokens");
-                });
-
-            modelBuilder.Entity("TKC_Cloud.Models.Share", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Share.Share", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -184,7 +134,7 @@ namespace TKC_Cloud.Migrations
                     b.ToTable("Shares");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.SharePermission", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Share.SharePermission", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -209,73 +159,57 @@ namespace TKC_Cloud.Migrations
                     b.ToTable("SharePermissions");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.UploadSession", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Token.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ChunkSize")
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRevoked")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("TKC_Shared.Models.Token.RegisterToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ExpectedHash")
+                    b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsCompleted")
+                    b.Property<bool>("IsUsed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("OrginalFileName")
+                    b.Property<string>("Token")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TotalChunks")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("TotalSize")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("UploadedBytes")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UploadSessions");
-                });
-
-            modelBuilder.Entity("TKC_Cloud.Models.UploadedChunk", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("ChunkIndex")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("UploadSessionId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UploadedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UploadSessionId", "ChunkIndex")
-                        .IsUnique();
-
-                    b.ToTable("uploadedChunks");
+                    b.ToTable("RegisterTokens");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.User", b =>
+            modelBuilder.Entity("TKC_Shared.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -308,18 +242,18 @@ namespace TKC_Cloud.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.FileEntry", b =>
+            modelBuilder.Entity("TKC_Shared.Models.FileEntry", b =>
                 {
-                    b.HasOne("TKC_Cloud.Models.Folder", "Folder")
+                    b.HasOne("TKC_Shared.Models.Folder", "Folder")
                         .WithMany("Files")
                         .HasForeignKey("FolderId");
 
                     b.Navigation("Folder");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.Folder", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Folder", b =>
                 {
-                    b.HasOne("TKC_Cloud.Models.Folder", "Parent")
+                    b.HasOne("TKC_Shared.Models.Folder", "Parent")
                         .WithMany("SubFolders")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -327,20 +261,9 @@ namespace TKC_Cloud.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.RefreshToken", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Share.SharePermission", b =>
                 {
-                    b.HasOne("TKC_Cloud.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TKC_Cloud.Models.SharePermission", b =>
-                {
-                    b.HasOne("TKC_Cloud.Models.Share", "Share")
+                    b.HasOne("TKC_Shared.Models.Share.Share", "Share")
                         .WithMany("Permissions")
                         .HasForeignKey("ShareId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -349,32 +272,27 @@ namespace TKC_Cloud.Migrations
                     b.Navigation("Share");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.UploadedChunk", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Token.RefreshToken", b =>
                 {
-                    b.HasOne("TKC_Cloud.Models.UploadSession", "UploadSession")
-                        .WithMany("UploadedChunks")
-                        .HasForeignKey("UploadSessionId")
+                    b.HasOne("TKC_Shared.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("UploadSession");
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.Folder", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Folder", b =>
                 {
                     b.Navigation("Files");
 
                     b.Navigation("SubFolders");
                 });
 
-            modelBuilder.Entity("TKC_Cloud.Models.Share", b =>
+            modelBuilder.Entity("TKC_Shared.Models.Share.Share", b =>
                 {
                     b.Navigation("Permissions");
-                });
-
-            modelBuilder.Entity("TKC_Cloud.Models.UploadSession", b =>
-                {
-                    b.Navigation("UploadedChunks");
                 });
 #pragma warning restore 612, 618
         }

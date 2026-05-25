@@ -18,6 +18,7 @@ public class S3Stettings
     public string Endpoint { get; set; } = "";
     public string AccessKey { get; set; } = "";
     public string SecretKey { get; set; } = "";
-    public string BucketName { get; set; } = "";
+    public string StorageBucket { get; set; } = "";
+    public string UploadBucket { get; set; } = "";
     public bool UseSSL { get; set; } = false;
 }
