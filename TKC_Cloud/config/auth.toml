@@ -1,0 +1,16 @@
+[Registation]
+AllowRegistration = true
+RequireEmailConfirmation = false
+
+[Password]
+MinimumLength = 10
+
+[JWT_Config]
+Issuer = "TKC Cloud"
+Audience = "TKC Cloud Clients"
+
+# Access token lifetime in hours
+AccessTokenLifetimeHours = 2
+
+# Refresh token lifetime in days
+RefreshTokenLifetimeDays = 30

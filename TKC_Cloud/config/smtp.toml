@@ -1,0 +1,4 @@
+[SMTP]
+Host = "mail.example.com"
+Port = 587
+Username = ""

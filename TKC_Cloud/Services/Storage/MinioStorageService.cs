@@ -2,25 +2,22 @@ using Microsoft.Extensions.Options;
 using Minio;
 using Minio.ApiEndpoints;
 using Minio.DataModel.Args;
+using TKC_Cloud.Services.Config;
+using TKC_Cloud.Services.Config.Models;
 
 namespace TKC_Cloud.Services.Storage;
 
 public class MinioStorageService : IStorageService
 {
     private readonly IMinioClient _client;
-    private readonly StorageSettings _settings;
+    private readonly StorageOptions _settings;
     private readonly ILogger<MinioStorageService> _logger;
 
-    public MinioStorageService(IMinioClient client, IOptions<StorageSettings> options, ILogger<MinioStorageService> logger)
+    public MinioStorageService(IMinioClient client, IConfigurationService config, ILogger<MinioStorageService> logger)
     {
-        _settings = options.Value;
+        _settings = config.Get<StorageOptions>()!;
         _logger = logger;
-
         _client = client;
-        /*_client = new MinioClient()
-            .WithEndpoint(_settings.S3.Endpoint)
-            .WithCredentials(_settings.S3.AccessKey, _settings.S3.SecretKey)
-            .Build();*/
     }
 
     public async Task CreateFileAsync(Guid userId, string fileName)

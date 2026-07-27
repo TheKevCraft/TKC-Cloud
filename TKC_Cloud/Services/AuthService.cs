@@ -3,19 +3,21 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
-using TKC_Cloud.Data;
+using TKC_Cloud.Services.Secret;
 
 namespace TKC_Cloud.Services;
 
 public class AuthService
 {
     private readonly AppDbContext _context;
-    private readonly IConfiguration _config;
+    private readonly AuthOptions _options;
+    private readonly ISecretProvider _secrets;
 
-    public AuthService(AppDbContext context, IConfiguration config)
+    public AuthService(AppDbContext context, AuthOptions options, ISecretProvider secret)
     {
         _context = context;
-        _config = config;
+        _options = options;
+        _secrets = secret;
     }
 
     // Create Register-Token (to register a new User)
@@ -99,7 +101,7 @@ public class AuthService
             Id = Guid.NewGuid(),
             Token = Guid.NewGuid().ToString(),
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(30) // 30 Days accessable
+            ExpiresAt = DateTime.UtcNow.AddDays(_options.JWT_Config.RefeshTokenLifetimeDays)
         };
 
         _context.RefreshTokens.Add(refreshToken);
@@ -125,7 +127,8 @@ public class AuthService
     private string GenerateJwt(User user)
     {
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+            Encoding.UTF8.GetBytes(
+                _secrets.GetRequired(SecretKeys.JwtKey)));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -137,10 +140,11 @@ public class AuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
+            issuer: _options.JWT_Config.Issuer,
+            audience: _options.JWT_Config.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(2),
+            expires: DateTime.UtcNow.AddHours(
+                _options.JWT_Config.AccessTokenLifetimeHours),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

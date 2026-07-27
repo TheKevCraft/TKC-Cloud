@@ -1,0 +1,16 @@
+Port = 8080
+Https = true
+MaxUploadSize = 5368709120
+PublicUrl = "https://cloud.example.com"
+
+[Cors]
+Origins = [
+    "https://localhost:7151",
+    "https://cloud.tkccraft.de"
+]
+
+ExposedHeaders = [
+    "Content-Disposition"
+]
+
+PreflightMaxAgeHours = 1

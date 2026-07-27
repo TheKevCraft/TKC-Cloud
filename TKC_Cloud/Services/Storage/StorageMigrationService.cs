@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TKC_Cloud.Data;
+using TKC_Cloud.Services.Config;
+using TKC_Cloud.Services.Config.Models;
 
 namespace TKC_Cloud.Services.Storage;
 
@@ -19,8 +21,9 @@ public class StorageMigrationService : BackgroundService
     {
         using var scope = _provider.CreateScope();
 
+        var config = scope.ServiceProvider.GetRequiredService<IConfigurationService>();
         var factory = scope.ServiceProvider.GetRequiredService<IStorageServiceFactory>();
-        var settings = scope.ServiceProvider.GetRequiredService<IOptions<StorageSettings>>().Value;
+        var settings = config.Get<StorageOptions>();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         if (settings.PreviousProvider == null || settings.PreviousProvider == settings.Provider)

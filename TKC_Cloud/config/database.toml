@@ -1,0 +1,3 @@
+Provider = "SQLite"
+
+ConnectionString = "Data Source=cloud.db"

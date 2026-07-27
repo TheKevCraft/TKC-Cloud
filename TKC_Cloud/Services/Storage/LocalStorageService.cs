@@ -1,18 +1,22 @@
 using Microsoft.Extensions.Options;
+using TKC_Cloud.Services.Config;
+using TKC_Cloud.Services.Config.Models;
 
 namespace TKC_Cloud.Services.Storage;
 
 public class LocalStorageService : IStorageService
 {
     private readonly string _basePath;
+    private readonly StorageOptions _storage;
     private readonly ILogger<LocalStorageService> _logger;
 
-    public LocalStorageService(IOptions<StorageSettings> options, ILogger<LocalStorageService> logger)
+    public LocalStorageService(IConfigurationService config, ILogger<LocalStorageService> logger)
     {
-        _basePath = Path.GetFullPath(options.Value.Local.BasePath);
+        _storage = config.Get<StorageOptions>();
+        _basePath = Path.GetFullPath(_storage.Local.Path);
         _logger = logger;
 
-        if (!Directory.Exists(_basePath))
+        if (!Directory.Exists(_basePath) || _storage.Provider == "Local")
         {
             Directory.CreateDirectory(_basePath);
             _logger.LogInformation("Storage base path created at {Path}", _basePath);

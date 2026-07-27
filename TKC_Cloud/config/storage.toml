@@ -1,0 +1,11 @@
+# Storage provider
+Provider = "Minio"
+
+[Local]
+Path = "./Storage"
+
+[S3]
+Endpoint = "192.168.178.104:9000"
+StorageBucket = "cloudapi"
+UseSSL = false
+Region = "us-east-1"
