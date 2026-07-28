@@ -1,14 +1,24 @@
+using System.Reflection;
+using System.Security.Cryptography;
 using TKC_Cloud.Services.Config.Models;
 
 namespace TKC_Cloud.Services.Config;
 
-internal class ConfigurationService : IConfigurationService
+internal class ConfigurationService : IConfigurationService, IDisposable
 {
     private readonly ILogger<ConfigurationService> _logger;
     private readonly string _configPath;
-    private readonly Dictionary<Type, object> _configs = new();
-    private readonly Dictionary<Type, string> _files = new();
-
+    private readonly Dictionary<Type, ConfigEntry> _configs = new();
+    private readonly ReaderWriterLockSlim _lock = new();
+    //public event EventHandler<ConfigurationChangedEventArgs>? ConfigurationChanged;
+    private static readonly IReadOnlyList<ConfigurationDefinition> Configurations = 
+    [
+        new(typeof(ServerOptions), "server.toml"),
+        new(typeof(StorageOptions), "storage.toml"),
+        new(typeof(DatabaseOptions), "database.toml"),
+        new(typeof(AuthOptions), "auth.toml")
+    ];
+    
     public ConfigurationService(IWebHostEnvironment environment, ILogger<ConfigurationService> logger)
     {
         _logger = logger;
@@ -22,10 +32,15 @@ internal class ConfigurationService : IConfigurationService
     {
         try
         {
-            Register<ServerOptions>("server.toml");
-            Register<StorageOptions>("storage.toml");
-            Register<DatabaseOptions>("database.toml");
-            Register<AuthOptions>("auth.toml");
+            foreach (var (type, file) in Configurations)
+            {
+                Register(type, file);
+
+                _logger.LogInformation(
+                    "Loaded {Type} from {File}",
+                    type.Name,
+                    file);
+            }
 
             _logger.LogInformation("Configuration loaded successfully.");
         }
@@ -41,63 +56,279 @@ internal class ConfigurationService : IConfigurationService
         }
     }
 
-    private void Register<T>(string file)
+    #region Register
+
+    private void Register(Type type, string file)
+    {
+        RegisterMethod
+            .MakeGenericMethod(type)
+            .Invoke(this, new object?[] { file });
+    }
+
+    private void RegisterGeneric<T>(string file)
         where T : class
     {
-        var path = Path.Combine(_configPath, file);
+        _lock.EnterWriteLock();
+        try
+        {
+            if (_configs.ContainsKey(typeof(T)))
+            {
+                throw new InvalidOperationException("Configuration is already registered!");
+            }
 
-        _logger.LogDebug(
-            "Loading configuration {ConfigType} from {Path}",
-            typeof(T).Name,
-            path
-        );
+            var path = Path.Combine(_configPath, file);
 
-        var config = ConfigLoader.Load<T>(path);
+            _logger.LogDebug(
+                "Loading configuration {ConfigType} from {Path}",
+                typeof(T).Name,
+                path
+            );
 
-        _logger.LogInformation("Loaded configuration {ConfigType}", typeof(T).Name);
+            using var stream = File.OpenRead(path);
 
-        _configs[typeof(T)] = config;
+            var hash = Convert.ToHexString(SHA256.HashData(stream));
 
-        _files[typeof(T)] = path;
+            var config = ConfigLoader.Load<T>(path);
+
+            _logger.LogInformation("Loaded configuration {ConfigType}", typeof(T).Name);
+
+            _configs[typeof(T)] = new ConfigEntry(
+                config,
+                path,
+                hash,
+                DateTime.UtcNow
+            );
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
+
+    #endregion
+
+    #region Get`s
 
     public T Get<T>()
         where T : class
     {
-        if (_configs.TryGetValue(typeof(T), out var config))
-            return (T)config;
-
-        throw new InvalidOperationException($"Configuration '{typeof(T).Name}' not registered.");
+        _lock.EnterReadLock();
+        try
+        {
+            if (_configs.TryGetValue(typeof(T), out var config))
+                return (T)config.Value;
+                
+            throw new InvalidOperationException($"Configuration '{typeof(T).Name}' not registered.");
+        }
+        finally
+        {
+            _lock.ExitReadLock();   
+        }
     }
 
-    public IReadOnlyDictionary<Type, object> GetAll()
+    public bool TryGet<T>(out T? value)
+        where T : class
     {
-        return _configs;
+        _lock.EnterReadLock();
+        try
+        {
+            if (_configs.TryGetValue(typeof(T), out var obj))
+            {
+                value = (T)obj.Value;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns>Returns a snapshot of the configurations.</returns>
+    public IEnumerable<KeyValuePair<Type, object>> GetAll()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return _configs.ToDictionary(
+                x => x.Key,
+                x => x.Value.Value
+            );
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    public ConfigurationInfo GetInfo<T>()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            if (_configs.TryGetValue(typeof(T), out var config))
+                return new ConfigurationInfo
+                (
+                    config.File, 
+                    config.Hash, 
+                    config.LoadedAt
+                );
+                
+            throw new InvalidOperationException($"Configuration '{typeof(T).Name}' not registered.");
+        }
+        finally
+        {
+            _lock.ExitReadLock();   
+        }
+    }
+
+    #endregion
+
+    #region Reload
 
     public void Reload()
     {
-        foreach (var item in _files)
+        foreach (var type in _configs.Keys.ToList())
         {
-            var type = item.Key;
-
-            var path = item.Value;
-
-            var method = typeof(ConfigLoader)
-                .GetMethod(nameof(ConfigLoader.Load))!
-                .MakeGenericMethod(type);
-
-            _configs[type] = method.Invoke(null, new object[] { path })!;
+            ReloadMethod
+                .MakeGenericMethod(type)
+                .Invoke(this, null);
         }
     }
+
+    public void Reload<T>()
+        where T : class
+    {
+        _lock.EnterWriteLock();
+        try
+        {
+            var type = typeof(T);
+
+            if (!_configs.TryGetValue(type, out var entry))
+                throw new InvalidOperationException(
+                    $"Configuration '{type.Name}' not registered.");
+
+            var config = ConfigLoader.Load<T>(entry.File);
+
+            _configs[type] = new ConfigEntry(
+                config,
+                entry.File,
+                null,
+                DateTime.UtcNow
+            );
+
+            _logger.LogInformation(
+                "Reloaded configuration {Type}",
+                typeof(T).Name);
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
+    }
+
+    #endregion
+
+    #region Save
 
     public void Save<T>()
         where T : class
     {
-        var type = typeof(T);
+        _lock.EnterReadLock();
+        try
+        {
+            var type = typeof(T);
 
-        var config = (T)_configs[type];
+            var config = (T)_configs[type].Value;
 
-        ConfigLoader.Save(_files[type], config);
+            ConfigLoader.Save(_configs[type].File, config);
+
+            using var stream = File.OpenRead(_configs[type].File);
+
+            //_configs[type].Hash = Convert.ToHexString(SHA256.HashData(stream));
+
+            _logger.LogInformation(
+                "Saved configuration {Type}",
+                typeof(T).Name);
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
+
+    public void SaveAll()
+    {
+        foreach(var type in _configs.Keys)
+        {
+            SaveMethod
+                .MakeGenericMethod(type)
+                .Invoke(this, null);
+        }
+    }
+
+    #endregion
+
+    public bool Exists<T>()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return _configs.ContainsKey(typeof(T));
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    public void Dispose()
+    {
+        _lock.Dispose();
+    }
+
+    #region MethodInfo`s
+
+    private static readonly MethodInfo RegisterMethod =
+        typeof(ConfigurationService)
+            .GetMethod(nameof(RegisterGeneric), 
+                BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private static readonly MethodInfo ReloadMethod =
+        typeof(ConfigurationService)
+            .GetMethod(nameof(Reload), 1, Type.EmptyTypes)!;
+
+    private static readonly MethodInfo SaveMethod =
+        typeof(ConfigurationService)
+            .GetMethod(nameof(Save))!;
+
+    #endregion
+
+    // Models
+    private sealed record ConfigEntry
+    (
+        object Value,
+        string File,
+        string? Hash,
+        DateTime LoadedAt
+    );
+
+    internal sealed record ConfigurationInfo
+    (
+        string File,
+        string? Hash,
+        DateTime LoadedAt
+    );
+
+    private sealed record ConfigurationDefinition
+    (
+        Type Type,
+        string File
+    );
 }
